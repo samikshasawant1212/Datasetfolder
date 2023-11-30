@@ -1,0 +1,292 @@
+---
+title: Energy Efficiency Dataset"
+date: "2023-08-24"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+1.1. What dataset did you pick? 
+I picked energy efficiency dataset as my final project for IMT 572, which contains the data of heating and cooling loads in buildings along with multiple variables related to the building such as surface area, roof area. I picked the dataset from Kaggle.com. 
+1.2. Why did you pick that one? 
+Having worked in the energy industry in the past, I was curious to know the factors which contribute to energy consumption in a building. These factors could be different during different seasons – in winter, heating load is important – and also on the weather of the city. Understanding these factors because of it could help in reducing energy consumption. We can design buildings which result in low energy consumption and contribute to sustainability. It would also result in cost savings by substituting variables which are mainly causing more energy consumption with the sustainable alternatives.
+1.3. What does one line in the dataset represent?
+The first line of the dataset below gives a snapshot of the variables and sample values. 
+ 
+
+The variables can be classified in the following categories.
+•	Area variables
+o	Surface Area
+o	Wall Area
+o	Roof Area
+•	Building characteristics
+o	Overall Height
+o	Orientation
+o	Compactness
+
+•	Glazing
+o	Glazing Area
+o	Glazing Area Distribution
+•	Loads
+o	Heating Load
+o	Cooling Load
+
+The dataset consists of data from 12 buildings and has 768 rows and 8 variables. Both heating and cooling loads depend on various building related variables. Hence, loads can be considered as dependent variables while other can be independent variables. Orientation, Glazing area, Glazing area distribution are categorical variables whereas others are numerical variables.
+
+1.4. What are the columns of the dataset, and what do they mean?
+•	Relative compactness: The volume to surface ratio is compared to that of the most compact shape with the same volume. It is a ratio.
+•	Surface area: Total surface area of the building in m2
+•	Wall area: Surface area of building's wall in m2
+•	Roof area: Surface area of building's roof in m2
+•	Overall height: Height of the building in meters(m)
+•	Orientation: Orientation of the building. 
+o	"2": North
+o	"3": East
+o	"4": South
+o	"5": West
+•	Glazing area: % amount of glazing (glass surfaces) of floor area of the building denotes 0%, 10%, 25%, and 40%
+•	Glazing area distribution: represent the % amount of glazing area distribution (variance)
+o	 1: "Uniform"
+o	"2": North
+o	"3": East
+o	"4": South
+o	"5": West
+•	Heating Load: Heating load of the building with the unit kWh/ m2
+•	Cooling Load: Cooling load of the building with the unit kWh/ m2
+
+
+2. What is your research question? Why does that relationship interest you? Why did you choose to exclude some variables from that question?
+2.1. Research Question:
+1.	How does the Energy consumption of a building depend on the different factors of the building? 
+(We can use variables related to the structure of the building to predict energy consumption.)
+2.	What is the relationship between the actual heating load and predicted heating load?
+(The same can be applicable for cooling load as well)
+
+2.2. Why is this question interesting?
+The relationship between each variable and energy consumption can be useful to modify building structure to reduce energy consumption. Such relationship can help us to construct energy sustainable buildings, which will benefit the environment.
+
+2.3.	Exclusion of variables:
+Some variables of building do not have relationship with the energy consumption as seen from the correlation which is not statistically significant.
+
+Roof area and Orientation variables were not statistically significant in both the cases – heating load and cooling load that is the reason both the variables have been excluded in the final heating and cooling load regression equations.
+
+
+3. What method did you pick to answer your question and why? What strength does that method have over other ones?
+I picked multivariate regression to answer the research question. The reasons for selecting this method are as follows.
+•	Output variables are continuous as they are energy consumption in kWh/ m2 
+•	There are multiple variables related to structure of the building 
+•	Predictor variables are mix of categorical and continuous
+This method enables establishing relationships between individual variables and dependent variables. It also allows us to create separate equations for two output variables if required.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+install.packages("readxl")
+library(readxl)
+```
+
+```{r}
+df<-read_excel("Energy_Project.xlsx")
+df
+```
+
+
+```{r}
+install.packages("tidyverse")
+library(tidyverse)
+```
+```{r}
+df_data<-df%>%
+  mutate(Glazing_area_distribution = as.factor(Glazing_area_distribution),
+         Orientation = 
+           as.factor(Orientation))
+nrow(df_data)
+```
+```{r}
+set.seed(1)
+random_order <- sample(nrow(df_data))
+df_data <- df_data[random_order, ]
+```
+
+
+```{r}
+install.packages("MLmetrics")
+library(MLmetrics)
+```
+```{r}
+install.packages("corrplot")
+library(corrplot)
+```
+4. Include at least two plots in your paper. All plots must be fully labeled and use appropriate encodings.
+Answer: 
+
+PLOT NO. 1
+
+The plot below shows the correlation between continuous variables. Categorical variables - Glazing area distribution and Orientation – are not included as their correlation may not be meaningful.
+
+
+```{r}
+M = cor(select(df_data,c('Compactness','Surface_area','Wall_area','Roof_area','Overall_height','Glazing_area','Heating_load','Cooling_load')))
+corrplot(M, method = 'ellipse')
+```
+
+
+```{r}
+split <- round(nrow(df)* .3)
+
+testing_data_df <- df_data[1:split ,]
+training_data_df <- df_data[(split+1):nrow(df_data),]
+```
+```{r}
+multi_reg_df_original <- lm(Heating_load ~ Compactness + Surface_area + Wall_area + Roof_area + Overall_height + Orientation + Glazing_area + Glazing_area_distribution, data = training_data_df)
+```
+
+```{r}
+summary(multi_reg_df_original)
+```
+```{r}
+multi_reg_df <- lm(Heating_load ~ Compactness + Surface_area + Wall_area + Overall_height + Glazing_area + Glazing_area_distribution, data = training_data_df)
+```
+```{r}
+summary(multi_reg_df)
+```
+5. If you are running linear or logistic regression, write out the specific regression equation. If you are using a machine learning method, describe how you will implement that method, including equations if/when appropriate.
+
+5.1 Multi-regression equation(Heating Load):
+Heating_load = 73.76+(-61.47) *Compactness+
+(-0.08)*Surface_area+0.06*Wall_area+4.36*Overall_height+17.31*Glazing_area
++ 4.35*Glazing_area_distribution1+4.04* Glazing_area_distribution2+
+3.83* Glazing_area_distribution3+3.97* Glazing_area_distribution4+
+3.72* Glazing_area_distribution5
+
+
+```{r}
+training_data_df <- training_data_df %>%
+mutate(multi_reg_prediction = predict(multi_reg_df,
+newdata=training_data_df))
+
+RMSE(training_data_df$Heating_load, training_data_df$multi_reg_prediction)
+MAE(training_data_df$Heating_load, training_data_df$multi_reg_prediction)
+```
+
+```{r}
+testing_data_df <- testing_data_df %>%
+mutate(multi_reg_prediction = predict(multi_reg_df,
+newdata=testing_data_df))
+
+
+RMSE(testing_data_df$Heating_load, testing_data_df$multi_reg_prediction)
+MAE(training_data_df$Heating_load, testing_data_df$multi_reg_prediction)
+```
+PLOT NO. 2
+
+```{r}
+plot(testing_data_df$Heating_load,testing_data_df$multi_reg_prediction,
+     main='Predicted vs Actual values for Heating Load',
+     xlab='Actual Heating Load',ylab='Predicted Heating Load', col=c('red','green'))
+```
+The plot shows the scatter plot graph of predicted vs actual values for Heating Load variables from the multi-linear regression equation. Roof area and Orientation – are not included as they are not statistically significant.
+
+```{r}
+energy_cooling_original <- lm(Cooling_load ~ Compactness + Surface_area + Wall_area + Roof_area + Overall_height + Orientation + Glazing_area + Glazing_area_distribution, data = training_data_df)
+summary (energy_cooling_original)
+```
+```{r}
+energy_cooling <- lm(Cooling_load ~ Compactness + Surface_area + Wall_area + Overall_height + Glazing_area + Glazing_area_distribution, data = training_data_df)
+summary (energy_cooling)
+```
+
+
+5.2 Multi-regression equation(Cooling):
+Cooling_load = 92.15+(-68.25) *Compactness+
+(-0.08)*Surface_area+0.04*Wall_area+4.28*Overall_height+14.22*Glazing_area
++ 1.77*Glazing_area_distribution1+1.98* Glazing_area_distribution2+
+1.29* Glazing_area_distribution3+1.60* Glazing_area_distribution4+
+1.41* Glazing_area_distribution5
+
+
+
+
+PLOT 2
+```{r}
+plot(testing_data_df$Cooling_load,testing_data_df$multi_reg_prediction,
+     main='Predicted vs Actual values for Cooling Load',
+     xlab='Actual Cooling Load',ylab='Predicted Cooling Load', col=c('red','green'))
+```
+The plot shows the scatter plot graph of predicted vs actual values for Cooling Load variables from the multi-linear regression equation. Roof area and Orientation – are not included as they are not statistically significant.
+
+
+
+6. For linear regression, include a description of all coefficients and their uncertainty and p-values. For machine learning methods, this should include accuracy metrics for your model. In both cases, the step must include a sentence about specifically how to interpret the results, such as "a unit increase in variable x is associated with a 20-point increase in variable y," or "this method classifies variable x into categories y with 85% accuracy."
+
+Heating Load Equation:
+•	The base level of heating load is 73 kWh/m2 
+•	A unit increase in compactness results in decrease in the heating load by 61 kWh/m2
+•	A unit increase in surface area results in decrease in the heating load by 0.08 kWh/m2
+•	A unit increase in wall area results in increase in the heating load by 0.06 kWh/m2
+•	A unit increase in overall height results in increase in the heating load by 4 kWh/m2
+•	A unit increase in glazing area results in increase in the heating load by 17 kWh/m2
+•	A unit increase in uniform glazing area results in increase in the heating load by 4.3 kWh/m2
+•	A unit increase in glazing area in North results in increase in the heating load by 4.0 kWh/m2
+•	A unit increase in glazing area in East results in increase in the heating load by 3.8 kWh/m2
+•	A unit increase in glazing area in South results in increase in the heating load by 4.0 kWh/m2
+•	A unit increase in glazing area in West results in increase in the heating load by 4.0 kWh/m2
+
+
+Cooling Load Equation:
+•	The base level of cooling load is 92 kWh/m2 
+•	A unit increase in compactness results in decrease in the cooling load by 61 kWh/m2
+•	A unit increase in surface area results in decrease in the cooling load by 0.08 kWh/m2
+•	A unit increase in wall area results in increase in the cooling load by 0.06 kWh/m2
+•	A unit increase in overall height results in increase in the cooling load by 4 kWh/m2
+•	A unit increase in glazing area results in increase in the cooling load by 17 kWh/m2
+•	A unit increase in uniform glazing area results in increase in the cooling load by 4.3 kWh/m2
+•	A unit increase in glazing area in North results in increase in the cooling load by 4.0 kWh/m2
+•	A unit increase in glazing area in East results in increase in the cooling load by 3.8 kWh/m2
+•	A unit increase in glazing area in South results in increase in the cooling load by 3.9 kWh/m2
+•	A unit increase in glazing area in West results in increase in the cooling load by 3.7 kWh/m2
+
+
+7. Describe the weaknesses of your method analytically and what its implications are from a scientific, moral, and societal perspective.
+
+Weaknesses of the model are as follows.
+•	Energy consumption could also depend on other factors which are not covered above. 
+•	The data is restricted to 12 buildings, which are in a certain geography. The factor could vary depending on climate and geography of the buildings
+Implications of the weaknesses
+•	The research question is limited to only certain situations and will not be scientifically accurate in all situations.
+•	Incorrect application of the model can result in higher energy consumption than predicted, thereby impacting the sustainability goals.
+
+
+
+
+Reference: 
+http://ibpsa.org/proceedings/BS2011/P_1563.pdf
+
+
+
+
